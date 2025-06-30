@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Class Schedule</title>
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            --warning-gradient: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
+            --bg-light: #f8fafc;
+            --bg-dark: #1a202c;
+            --card-light: #ffffff;
+            --card-dark: #2d3748;
+            --text-light: #2d3748;
+            --text-dark: #f7fafc;
+            --border-light: #e2e8f0;
+            --border-dark: #4a5568;
+            --shadow-light: 0 10px 30px rgba(0, 0, 0, 0.1);
+            --shadow-dark: 0 10px 30px rgba(0, 0, 0, 0.3);
+            --current-class: linear-gradient(135deg, #48bb78, #38a169);
+            --next-class: linear-gradient(135deg, #ed8936, #dd6b20);
+            --upcoming-class: linear-gradient(135deg, #4299e1, #3182ce);
+            --past-class: linear-gradient(135deg, #a0aec0, #718096);
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: var(--bg-dark);
+            --card-bg: var(--card-dark);
+            --text-primary: var(--text-dark);
+            --text-secondary: #a0aec0;
+            --border-color: var(--border-dark);
+            --shadow: var(--shadow-dark);
+        }
+
+        [data-theme="light"] {
+            --bg-primary: var(--bg-light);
+            --card-bg: var(--card-light);
+            --text-primary: var(--text-light);
+            --text-secondary: #4a5568;
+            --border-color: var(--border-light);
+            --shadow: var(--shadow-light);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            transition: all 0.3s ease;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+            position: relative;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        .live-clock {
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+            border-radius: 25px;
+            padding: 1rem 2rem;
+            font-size: 1.2rem;
+            font-weight: 600;
+            display: inline-block;
+            margin-top: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 2rem;
+            right: 2rem;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            color: white;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1);
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .status-section {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        .status-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .status-message {
+            font-size: 1.2rem;
+            padding: 1rem;
+            border-radius: 15px;
+            margin-bottom: 1rem;
+        }
+
+        .status-message.no-class {
+            background: var(--warning-gradient);
+            color: white;
+        }
+
+        .status-message.current-class {
+            background: var(--current-class);
+            color: white;
+            animation: pulse 2s infinite;
+        }
+
+        .status-message.next-class {
+            background: var(--next-class);
+            color: white;
+        }
+
+        .status-message.no-classes-today {
+            background: var(--success-gradient);
+            color: white;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(72, 187, 120, 0.7); }
+            70% { transform: scale(1.02); box-shadow: 0 0 0 10px rgba(72, 187, 120, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(72, 187, 120, 0); }
+        }
+
+        .legend {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: var(--card-bg);
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+        }
+
+        .legend-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+        }
+
+        .legend-dot.current { background: #48bb78; }
+        .legend-dot.next { background: #ed8936; }
+        .legend-dot.upcoming { background: #4299e1; }
+        .legend-dot.past { background: #a0aec0; }
+
+        .day-section {
+            margin-bottom: 3rem;
+        }
+
+        .day-header {
+            background: var(--secondary-gradient);
+            color: white;
+            padding: 1.5rem;
+            border-radius: 15px;
+            margin-bottom: 1rem;
+            text-align: center;
+            font-size: 1.3rem;
+            font-weight: 700;
+            box-shadow: var(--shadow);
+            position: relative;
+        }
+
+        .day-header.today {
+            background: var(--primary-gradient);
+            animation: glow 3s ease-in-out infinite alternate;
+        }
+
+        @keyframes glow {
+            from { box-shadow: var(--shadow); }
+            to { box-shadow: 0 0 30px rgba(102, 126, 234, 0.5); }
+        }
+
+        .today-badge {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: #ffd700;
+            color: #000;
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
+        }
+
+        .class-grid {
+            display: grid;
+            gap: 1rem;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+        }
+
+        .class-card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .class-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--primary-gradient);
+        }
+
+        .class-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .class-card.current {
+            border: 3px solid #48bb78;
+            background: linear-gradient(135deg, rgba(72, 187, 120, 0.1), rgba(56, 161, 105, 0.1));
+            animation: currentPulse 2s infinite;
+        }
+
+        .class-card.current::before {
+            background: var(--current-class);
+            height: 6px;
+        }
+
+        .class-card.next {
+            border: 3px solid #ed8936;
+            background: linear-gradient(135deg, rgba(237, 137, 54, 0.1), rgba(221, 107, 32, 0.1));
+        }
+
+        .class-card.next::before {
+            background: var(--next-class);
+            height: 6px;
+        }
+
+        .class-card.upcoming {
+            border: 2px solid #4299e1;
+            background: linear-gradient(135deg, rgba(66, 153, 225, 0.05), rgba(49, 130, 206, 0.05));
+        }
+
+        .class-card.upcoming::before {
+            background: var(--upcoming-class);
+        }
+
+        .class-card.past {
+            opacity: 0.6;
+            background: linear-gradient(135deg, rgba(160, 174, 192, 0.1), rgba(113, 128, 150, 0.1));
+        }
+
+        .class-card.past::before {
+            background: var(--past-class);
+        }
+
+        @keyframes currentPulse {
+            0% { box-shadow: var(--shadow), 0 0 0 0 rgba(72, 187, 120, 0.4); }
+            70% { box-shadow: var(--shadow), 0 0 0 10px rgba(72, 187, 120, 0); }
+            100% { box-shadow: var(--shadow), 0 0 0 0 rgba(72, 187, 120, 0); }
+        }
+
+        .class-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .course-code {
+            background: var(--primary-gradient);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.9rem;
+        }
+
+        .class-time {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+        }
+
+        .course-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            color: var(--text-primary);
+        }
+
+        .class-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+        }
+
+        .detail-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-secondary);
+        }
+
+        .detail-icon {
+            font-size: 1.1rem;
+        }
+
+        .countdown-timer {
+            background: rgba(255, 255, 255, 0.9);
+            color: #333;
+            padding: 0.8rem;
+            border-radius: 10px;
+            margin-top: 1rem;
+            text-align: center;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .class-card.current .countdown-timer {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .class-card.next .countdown-timer {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+
+        .no-classes {
+            text-align: center;
+            padding: 3rem;
+            font-size: 1.2rem;
+            color: var(--text-secondary);
+            font-style: italic;
+        }
+
+        .blink {
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.5; }
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .theme-toggle {
+                top: 1rem;
+                right: 1rem;
+                width: 50px;
+                height: 50px;
+                font-size: 1.2rem;
+            }
+
+            .container {
+                padding: 1rem;
+            }
+
+            .legend {
+                gap: 1rem;
+            }
+
+            .class-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .class-header {
+                flex-direction: column;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body data-theme="light">
+    <div class="header">
+        <div class="header-content">
+            <h1>📚 My Class Schedule</h1>
+            <div class="live-clock" id="liveClock"></div>
+            <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">🌙</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="status-section">
+            <div class="status-title">📍 Current Status</div>
+            <div id="statusMessage"></div>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-dot current"></div>
+                <span>Currently Running</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot next"></div>
+                <span>Next Class</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot upcoming"></div>
+                <span>Upcoming</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-dot past"></div>
+                <span>Past Classes</span>
+            </div>
+        </div>
+
+        <div id="scheduleContainer"></div>
+    </div>
+
+    <script>
+        const scheduleData = [
+            {
+                "day": "Saturday",
+                "classes": [
+                    {"time": "8:30-9:45", "code": "2C DS", "title": "Data Structures", "teacher": "RA", "room": "901"},
+                    {"time": "9:45-11:00", "code": "DC", "title": "Data Communication", "teacher": "FK", "room": "613"},
+                    {"time": "11:00-12:15", "code": "SE", "title": "Software Engineering", "teacher": "EAS", "room": "404"},
+                    {"time": "2:30-3:45", "code": "PM", "title": "Project Management and Entrepreneurship", "teacher": "RI", "room": "404"},
+                    {"time": "3:45-5:00", "code": "CCS", "title": "Computer and Cyber Security", "teacher": "SAF", "room": "408"}
+                ]
+            },
+            {
+                "day": "Sunday",
+                "classes": [
+                    {"time": "9:45-11:00", "code": "CN", "title": "Computer Networks", "teacher": "SAMI", "room": "610"},
+                    {"time": "11:00-12:15", "code": "SE", "title": "Software Engineering", "teacher": "EAS", "room": "610"},
+                    {"time": "12:15-1:30", "code": "2C DS", "title": "Data Structures", "teacher": "RA", "room": "406"}
+                ]
+            },
+            {
+                "day": "Monday",
+                "classes": [
+                    {"time": "8:30-9:45", "code": "SEL", "title": "Software Engineering Laboratory", "teacher": "EAS", "room": "604"},
+                    {"time": "10:00-11:00", "code": "SD", "title": "Software Development Project", "teacher": "DD", "room": "609"}
+                ]
+            },
+            {
+                "day": "Tuesday",
+                "classes": [
+                    {"time": "9:45-11:00", "code": "DC", "title": "Data Communication", "teacher": "FK", "room": "613"},
+                    {"time": "11:00-1:30", "code": "CNL", "title": "Computer Networks Laboratory", "teacher": "SAMI", "room": "606"},
+                    {"time": "3:45-5:00", "code": "PM", "title": "Project Management and Entrepreneurship", "teacher": "RI", "room": "405"}
+                ]
+            },
+            {
+                "day": "Wednesday",
+                "classes": [
+                    {"time": "8:30-9:45", "code": "CCS", "title": "Computer and Cyber Security", "teacher": "SAF", "room": "408"},
+                    {"time": "9:45-11:00", "code": "CN", "title": "Computer Networks", "teacher": "SAMI", "room": "610"},
+                    {"time": "11:00-1:30", "code": "SD", "title": "Software Development Project", "teacher": "DD", "room": "604"}
+                ]
+            }
+        ];
+
+        function parseTime(timeStr) {
+            const [time, period] = timeStr.includes('AM') || timeStr.includes('PM') 
+                ? [timeStr.slice(0, -2).trim(), timeStr.slice(-2)]
+                : [timeStr, null];
+            
+            let [hours, minutes] = time.split(':').map(Number);
+            
+            if (period === 'PM' && hours !== 12) hours += 12;
+            if (period === 'AM' && hours === 12) hours = 0;
+            
+            return hours * 60 + minutes;
+        }
+
+        function getCurrentTime() {
+            const now = new Date();
+            return now.getHours() * 60 + now.getMinutes();
+        }
+
+        function getCurrentDay() {
+            const days = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            return days[new Date().getDay()];
+        }
+
+        function formatCountdown(totalMinutes) {
+            if (totalMinutes < 0) return "Class ended";
+            
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = totalMinutes % 60;
+            
+            if (hours > 0) {
+                return `${hours}h ${minutes}m`;
+            }
+            return `${minutes}m`;
+        }
+
+        function getTimeUntilClass(classTime) {
+            const [startTime] = classTime.split('-');
+            const startMinutes = parseTime(startTime);
+            const currentTime = getCurrentTime();
+            return startMinutes - currentTime;
+        }
+
+        function getTimeLeftInClass(classTime) {
+            const [, endTime] = classTime.split('-');
+            const endMinutes = parseTime(endTime);
+            const currentTime = getCurrentTime();
+            return endMinutes - currentTime;
+        }
+
+        function getClassStatus(classInfo) {
+            const [startTime, endTime] = classInfo.time.split('-');
+            const startMinutes = parseTime(startTime);
+            const endMinutes = parseTime(endTime);
+            const currentTime = getCurrentTime();
+
+            if (currentTime >= startMinutes && currentTime < endMinutes) {
+                return 'current';
+            } else if (currentTime < startMinutes) {
+                return 'upcoming';
+            } else {
+                return 'past';
+            }
+        }
+
+        function findCurrentAndNextClasses() {
+            const currentDay = getCurrentDay();
+            const todaySchedule = scheduleData.find(day => day.day === currentDay);
+            
+            if (!todaySchedule) return { current: null, next: null };
+
+            let currentClass = null;
+            let nextClass = null;
+            const currentTime = getCurrentTime();
+
+            for (const classInfo of todaySchedule.classes) {
+                const [startTime, endTime] = classInfo.time.split('-');
+                const startMinutes = parseTime(startTime);
+                const endMinutes = parseTime(endTime);
+
+                if (currentTime >= startMinutes && currentTime < endMinutes) {
+                    currentClass = classInfo;
+                } else if (currentTime < startMinutes && !nextClass) {
+                    nextClass = classInfo;
+                }
+            }
+
+            // If no next class today, find next class in upcoming days
+            if (!nextClass) {
+                const currentDayIndex = scheduleData.findIndex(day => day.day === currentDay);
+                for (let i = 1; i < scheduleData.length; i++) {
+                    const nextDayIndex = (currentDayIndex + i) % scheduleData.length;
+                    const nextDaySchedule = scheduleData[nextDayIndex];
+                    if (nextDaySchedule.classes.length > 0) {
+                        nextClass = {
+                            ...nextDaySchedule.classes[0],
+                            dayName: nextDaySchedule.day
+                        };
+                        break;
+                    }
+                }
+            }
+
+            return { current: currentClass, next: nextClass };
+        }
+
+        function updateStatusMessage() {
+            const { current, next } = findCurrentAndNextClasses();
+            const statusElement = document.getElementById('statusMessage');
+            const currentDay = getCurrentDay();
+            const todaySchedule = scheduleData.find(day => day.day === currentDay);
+
+            if (!todaySchedule || todaySchedule.classes.length === 0) {
+                statusElement.innerHTML = `
+                    <div class="status-message no-classes-today">
+                        🎉 No classes scheduled for today. Enjoy your day!
+                    </div>
+                `;
+                return;
+            }
+
+            if (current) {
+                const timeLeft = getTimeLeftInClass(current.time);
+                statusElement.innerHTML = `
+                    <div class="status-message current-class blink">
+                        🟢 <strong>Currently Running:</strong> ${current.title} (${current.code})
+                        <br>⏰ Time remaining: ${formatCountdown(timeLeft)}
+                        <br>👨‍🏫 ${current.teacher} | 🏫 Room ${current.room}
+                    </div>
+                `;
+            } else if (next) {
+                const timeUntil = next.dayName ? null : getTimeUntilClass(next.time);
+                const nextInfo = next.dayName 
+                    ? `Next class is on ${next.dayName}`
+                    : `⏳ Starts in ${formatCountdown(timeUntil)}`;
+                
+                statusElement.innerHTML = `
+                    <div class="status-message next-class">
+                        🟡 <strong>No class running now.</strong>
+                        <br><strong>Next class:</strong> ${next.title} (${next.code})
+                        <br>${nextInfo}
+                        <br>👨‍🏫 ${next.teacher} | 🏫 Room ${next.room}
+                    </div>
+                `;
+            } else {
+                statusElement.innerHTML = `
+                    <div class="status-message no-class">
+                        ✅ All classes for today are over!
+                    </div>
+                `;
+            }
+        }
+
+        function createClassCard(classInfo, isToday = false) {
+            const status = isToday ? getClassStatus(classInfo) : 'upcoming';
+            const { current, next } = findCurrentAndNextClasses();
+            
+            let cardClass = status;
+            if (isToday && current && current.code === classInfo.code && current.time === classInfo.time) {
+                cardClass = 'current';
+            } else if (isToday && next && next.code === classInfo.code && next.time === classInfo.time) {
+                cardClass = 'next';
+            }
+
+            let countdownHtml = '';
+            if (cardClass === 'current') {
+                const timeLeft = getTimeLeftInClass(classInfo.time);
+                countdownHtml = `<div class="countdown-timer">⏰ ${formatCountdown(timeLeft)} remaining</div>`;
+            } else if (cardClass === 'next' && isToday) {
+                const timeUntil = getTimeUntilClass(classInfo.time);
+                countdownHtml = `<div class="countdown-timer">⏳ Starts in ${formatCountdown(timeUntil)}</div>`;
+            }
+
+            return `
+                <div class="class-card ${cardClass}">
+                    <div class="class-header">
+                        <div class="course-code">${classInfo.code}</div>
+                        <div class="class-time">⏰ ${classInfo.time}</div>
+                    </div>
+                    <div class="course-title">${classInfo.title}</div>
+                    <div class="class-details">
+                        <div class="detail-item">
+                            <span class="detail-icon">👨‍🏫</span>
+                            <span>${classInfo.teacher}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-icon">🏫</span>
+                            <span>Room ${classInfo.room}</span>
+                        </div>
+                    </div>
+                    ${countdownHtml}
+                </div>
+            `;
+        }
+
+        function reorderScheduleByCurrentDay() {
+            const currentDay = getCurrentDay();
+            const currentDayIndex = scheduleData.findIndex(day => day.day === currentDay);
+            
+            if (currentDayIndex === -1) return scheduleData;
+            
+            return [
+                ...scheduleData.slice(currentDayIndex),
+                ...scheduleData.slice(0, currentDayIndex)
+            ];
+        }
+
+        function renderSchedule() {
+            const container = document.getElementById('scheduleContainer');
+            const reorderedSchedule = reorderScheduleByCurrentDay();
+            const currentDay = getCurrentDay();
+            
+            let html = '';
+            
+            reorderedSchedule.forEach(dayData => {
+                const isToday = dayData.day === currentDay;
+                const dayEmoji = isToday ? '📍' : '🗓️';
+                
+                html += `
+                    <div class="day-section">
+                        <div class="day-header ${isToday ? 'today' : ''}">
+                            ${dayEmoji} ${dayData.day}
+                            ${isToday ? '<span class="today-badge">TODAY</span>' : ''}
+                        </div>
+                `;
+                
+                if (dayData.classes.length === 0) {
+                    html += '<div class="no-classes">No classes scheduled for this day</div>';
+                } else {
+                    html += '<div class="class-grid">';
+                    dayData.classes.forEach(classInfo => {
+                        html += createClassCard(classInfo, isToday);
+                    });
+                    html += '</div>';
+                }
+                
+                html += '</div>';
+            });
+            
+            container.innerHTML = html;
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const options = {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: true
+            };
+            document.getElementById('liveClock').textContent = now.toLocaleDateString('en-US', options);
+        }
+
+        function toggleTheme() {
+            const body = document.body;
+            const themeToggle = document.getElementById('themeToggle');
+            
+            if (body.getAttribute('data-theme') === 'light') {
+                body.setAttribute('data-theme', 'dark');
+                themeToggle.textContent = '☀️';
+            } else {
+                body.setAttribute('data-theme', 'light');
+                themeToggle.textContent = '🌙';
+            }
+        }
+
+        function init() {
+            updateClock();
+            updateStatusMessage();
+            renderSchedule();
+            
+            // Update every second for clock, every minute for schedule
+            setInterval(updateClock, 1000);
+            setInterval(() => {
+                updateStatusMessage();
+                renderSchedule();
+            }, 60000);
+        }
+
+        // Initialize the application
+        init();
+    </script>
+</body>
+</html>
