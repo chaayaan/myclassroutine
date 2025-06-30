@@ -97,6 +97,71 @@
             border: 2px solid #64b5f6;
         }
 
+        .next-class-shortcut {
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .next-class-shortcut:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .next-class-shortcut:active {
+            transform: translateY(0);
+        }
+
+        .dark-mode .next-class-shortcut {
+            background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+            box-shadow: 0 4px 15px rgba(74, 85, 104, 0.3);
+        }
+
+        .dark-mode .next-class-shortcut:hover {
+            box-shadow: 0 8px 25px rgba(74, 85, 104, 0.4);
+        }
+
+        .shortcut-icon {
+            font-size: 2rem;
+            margin-right: 15px;
+        }
+
+        .shortcut-text {
+            flex: 1;
+        }
+
+        .shortcut-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .shortcut-details {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .shortcut-arrow {
+            font-size: 1.5rem;
+            margin-left: 15px;
+            transition: transform 0.3s ease;
+        }
+
+        .next-class-shortcut:hover .shortcut-arrow {
+            transform: translateX(5px);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
         .day-section {
             margin-bottom: 30px;
         }
@@ -199,7 +264,7 @@
         .course-colors:nth-child(4n) { border-left-color: #f39c12; }
         .course-colors:nth-child(5n) { border-left-color: #9b59b6; }
 
-        @media (max-width: 768px) {
+            @media (max-width: 768px) {
             .container {
                 padding: 15px;
             }
@@ -213,6 +278,24 @@
                 right: 10px;
                 padding: 8px 15px;
                 font-size: 0.9rem;
+            }
+            
+            .next-class-shortcut {
+                padding: 15px;
+                margin: 15px 0;
+            }
+            
+            .shortcut-icon {
+                font-size: 1.5rem;
+                margin-right: 10px;
+            }
+            
+            .shortcut-title {
+                font-size: 1rem;
+            }
+            
+            .shortcut-details {
+                font-size: 0.8rem;
             }
             
             .class-details {
@@ -233,6 +316,15 @@
         
         <div id="status" class="status-message"></div>
         
+        <div id="next-class-shortcut" class="next-class-shortcut" onclick="jumpToNextClass()">
+            <div class="shortcut-icon">⏰</div>
+            <div class="shortcut-text">
+                <div class="shortcut-title">Next Class</div>
+                <div id="shortcut-details" class="shortcut-details">Loading...</div>
+            </div>
+            <div class="shortcut-arrow">→</div>
+        </div>
+        
         <div id="schedule"></div>
     </div>
 
@@ -241,42 +333,40 @@
             {
                 "day": "Saturday",
                 "classes": [
-                    {"time": "8:30-9:45", "code": "2C DS", "title": "Data Structures", "teacher": "RA", "room": "901"},
-                    {"time": "9:45-11:00", "code": "DC", "title": "Data Communication", "teacher": "FK", "room": "613"},
-                    {"time": "11:00-12:15", "code": "SE", "title": "Software Engineering", "teacher": "EAS", "room": "404"},
-                    {"time": "2:30-3:45", "code": "PM", "title": "Project Management and Entrepreneurship", "teacher": "RI", "room": "404"},
-                    {"time": "3:45-5:00", "code": "CCS", "title": "Computer and Cyber Security", "teacher": "SAF", "room": "408"}
+                    {"time": "9:45 AM - 11:00 AM", "code": "DC", "title": "Data Communication", "teacher": "FK", "room": "613"},
+                    {"time": "11:00 AM - 12:15 PM", "code": "SE", "title": "Software Engineering", "teacher": "EAS", "room": "404"},
+                    {"time": "2:30 PM - 3:45 PM", "code": "PM", "title": "Project Management and Entrepreneurship", "teacher": "RI", "room": "404"},
+                    {"time": "3:45 PM - 5:00 PM", "code": "CCS", "title": "Computer and Cyber Security", "teacher": "SAF", "room": "408"}
                 ]
             },
             {
                 "day": "Sunday",
                 "classes": [
-                    {"time": "9:45-11:00", "code": "CN", "title": "Computer Networks", "teacher": "SAMI", "room": "610"},
-                    {"time": "11:00-12:15", "code": "SE", "title": "Software Engineering", "teacher": "EAS", "room": "610"},
-                    {"time": "12:15-1:30", "code": "2C DS", "title": "Data Structures", "teacher": "RA", "room": "406"}
+                    {"time": "9:45 AM - 11:00 AM", "code": "CN", "title": "Computer Networks", "teacher": "SAMI", "room": "610"},
+                    {"time": "11:00 AM - 12:15 PM", "code": "SE", "title": "Software Engineering", "teacher": "EAS", "room": "610"}
                 ]
             },
             {
                 "day": "Monday",
                 "classes": [
-                    {"time": "8:30-9:45", "code": "SEL", "title": "Software Engineering Laboratory", "teacher": "EAS", "room": "604"},
-                    {"time": "10:00-11:00", "code": "SD", "title": "Software Development Project", "teacher": "DD", "room": "609"}
+                    {"time": "8:30 AM - 9:45 AM", "code": "SEL", "title": "Software Engineering Laboratory", "teacher": "EAS", "room": "604"},
+                    {"time": "10:00 AM - 11:00 AM", "code": "SD", "title": "Software Development Project", "teacher": "DD", "room": "609"}
                 ]
             },
             {
                 "day": "Tuesday",
                 "classes": [
-                    {"time": "9:45-11:00", "code": "DC", "title": "Data Communication", "teacher": "FK", "room": "613"},
-                    {"time": "11:00-1:30", "code": "CNL", "title": "Computer Networks Laboratory", "teacher": "SAMI", "room": "606"},
-                    {"time": "3:45-5:00", "code": "PM", "title": "Project Management and Entrepreneurship", "teacher": "RI", "room": "405"}
+                    {"time": "9:45 AM - 11:00 AM", "code": "DC", "title": "Data Communication", "teacher": "FK", "room": "613"},
+                    {"time": "11:00 AM - 1:30 PM", "code": "CNL", "title": "Computer Networks Laboratory", "teacher": "SAMI", "room": "606"},
+                    {"time": "3:45 PM - 5:00 PM", "code": "PM", "title": "Project Management and Entrepreneurship", "teacher": "RI", "room": "405"}
                 ]
             },
             {
                 "day": "Wednesday",
                 "classes": [
-                    {"time": "8:30-9:45", "code": "CCS", "title": "Computer and Cyber Security", "teacher": "SAF", "room": "408"},
-                    {"time": "9:45-11:00", "code": "CN", "title": "Computer Networks", "teacher": "SAMI", "room": "610"},
-                    {"time": "11:00-1:30", "code": "SD", "title": "Software Development Project", "teacher": "DD", "room": "604"}
+                    {"time": "8:30 AM - 9:45 AM", "code": "CCS", "title": "Computer and Cyber Security", "teacher": "SAF", "room": "408"},
+                    {"time": "9:45 AM - 11:00 AM", "code": "CN", "title": "Computer Networks", "teacher": "SAMI", "room": "610"},
+                    {"time": "11:00 AM - 1:30 PM", "code": "SD", "title": "Software Development Project", "teacher": "DD", "room": "604"}
                 ]
             }
         ];
@@ -299,18 +389,30 @@
         }
 
         function parseTime(timeStr) {
-            const [time, period] = timeStr.split(/(?=[AP]M)/);
-            let [hours, minutes] = time.split(':').map(Number);
+            // Handle format like "9:45 AM" or "11:00 PM"
+            const cleanTime = timeStr.trim();
+            const match = cleanTime.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+            
+            if (!match) return 0;
+            
+            let hours = parseInt(match[1]);
+            const minutes = parseInt(match[2]);
+            const period = match[3].toUpperCase();
+            
             if (period === 'PM' && hours !== 12) hours += 12;
             if (period === 'AM' && hours === 12) hours = 0;
+            
             return hours * 60 + minutes;
         }
 
         function parseTimeRange(timeRange) {
-            const [start, end] = timeRange.split('-');
+            // Handle format like "9:45 AM - 11:00 AM"
+            const parts = timeRange.split(' - ');
+            if (parts.length !== 2) return { start: 0, end: 0 };
+            
             return {
-                start: parseTime(start),
-                end: parseTime(end)
+                start: parseTime(parts[0]),
+                end: parseTime(parts[1])
             };
         }
 
@@ -383,6 +485,9 @@
             
             document.getElementById('status').textContent = message;
             
+            // Update next class shortcut
+            updateNextClassShortcut(next, current);
+            
             // Sort schedule to show today first
             const sortedSchedule = [...scheduleData].sort((a, b) => {
                 if (a.day === currentDay) return -1;
@@ -393,20 +498,24 @@
             const scheduleHTML = sortedSchedule.map(dayData => {
                 const isToday = dayData.day === currentDay;
                 
-                const classesHTML = dayData.classes.map(classItem => {
+                const classesHTML = dayData.classes.map((classItem, index) => {
                     let classStatus = '';
+                    let classId = `class-${dayData.day}-${index}`;
+                    
                     if (isToday && current && 
                         current.time === classItem.time && 
                         current.code === classItem.code) {
                         classStatus = 'current';
-                    } else if (isToday && next && !current &&
+                    } else if (next && 
                                next.time === classItem.time && 
-                               next.code === classItem.code) {
+                               next.code === classItem.code &&
+                               (next.day === dayData.day || (!next.day && isToday))) {
                         classStatus = 'next';
+                        classId = 'next-class-card';
                     }
 
                     return `
-                        <div class="class-card course-colors ${classStatus}">
+                        <div id="${classId}" class="class-card course-colors ${classStatus}">
                             <div class="class-time">${classItem.time}</div>
                             <div class="class-code">${classItem.code}</div>
                             <div class="class-title">${classItem.title}</div>
@@ -431,6 +540,46 @@
             }).join('');
 
             document.getElementById('schedule').innerHTML = scheduleHTML;
+        }
+
+        function updateNextClassShortcut(nextClass, currentClass) {
+            const shortcutElement = document.getElementById('next-class-shortcut');
+            const detailsElement = document.getElementById('shortcut-details');
+            
+            if (currentClass) {
+                // If there's a current class, show it instead
+                detailsElement.innerHTML = `
+                    <strong>Current: ${currentClass.code}</strong><br>
+                    ${currentClass.time} • Room ${currentClass.room}
+                `;
+                shortcutElement.style.background = 'linear-gradient(135deg, #27ae60 0%, #2ecc71 100%)';
+            } else if (nextClass) {
+                const nextDay = nextClass.day ? ` (${nextClass.day})` : '';
+                detailsElement.innerHTML = `
+                    <strong>${nextClass.code} - ${nextClass.title}</strong><br>
+                    ${nextClass.time} • Room ${nextClass.room}${nextDay}
+                `;
+                shortcutElement.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+            } else {
+                detailsElement.innerHTML = 'No upcoming classes';
+                shortcutElement.style.background = 'linear-gradient(135deg, #95a5a6 0%, #7f8c8d 100%)';
+            }
+        }
+
+        function jumpToNextClass() {
+            const nextClassCard = document.getElementById('next-class-card');
+            if (nextClassCard) {
+                nextClassCard.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'center' 
+                });
+                
+                // Add a brief highlight effect
+                nextClassCard.style.transform = 'scale(1.05)';
+                setTimeout(() => {
+                    nextClassCard.style.transform = '';
+                }, 300);
+            }
         }
 
         function toggleTheme() {
