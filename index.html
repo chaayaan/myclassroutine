@@ -435,33 +435,27 @@
 
             let currentClass = null;
             let nextClass = null;
+            let currentClassIndex = -1;
 
-            // First, check if any class is currently running
-            for (const classItem of todaySchedule.classes) {
+            // First, check if any class is currently running and get its index
+            for (let i = 0; i < todaySchedule.classes.length; i++) {
+                const classItem = todaySchedule.classes[i];
                 const { start, end } = parseTimeRange(classItem.time);
                 
                 if (currentTime >= start && currentTime < end) {
                     currentClass = classItem;
+                    currentClassIndex = i;
                     break;
                 }
             }
 
-            // If a class is currently running, find the next class after it ends
-            if (currentClass) {
-                const currentClassEnd = parseTimeRange(currentClass.time).end;
-                
-                // Look for the next class today after the current class ends
-                for (const classItem of todaySchedule.classes) {
-                    const { start } = parseTimeRange(classItem.time);
-                    
-                    if (start > currentClassEnd) {
-                        nextClass = classItem;
-                        break;
-                    }
-                }
-                
-                // If no more classes today, look for next day's first class
-                if (!nextClass) {
+            // If a class is currently running, find the very next class in the list
+            if (currentClass && currentClassIndex >= 0) {
+                // Check if there's a next class today (immediate next in the array)
+                if (currentClassIndex + 1 < todaySchedule.classes.length) {
+                    nextClass = todaySchedule.classes[currentClassIndex + 1];
+                } else {
+                    // No more classes today, look for next day's first class
                     nextClass = findNextClassFromUpcomingDays(currentDay);
                 }
             } else {
