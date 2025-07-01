@@ -424,9 +424,11 @@
             const todaySchedule = scheduleData.find(d => d.day === currentDay);
             
             if (!todaySchedule || todaySchedule.classes.length === 0) {
+                // Find next class from upcoming days
+                const nextClass = findNextClassFromUpcomingDays(currentDay);
                 return {
                     current: null,
-                    next: null,
+                    next: nextClass,
                     message: `No classes scheduled for ${currentDay}.`
                 };
             }
@@ -434,6 +436,7 @@
             let currentClass = null;
             let nextClass = null;
 
+            // First, check if any class is currently running
             for (const classItem of todaySchedule.classes) {
                 const { start, end } = parseTimeRange(classItem.time);
                 
@@ -441,27 +444,40 @@
                     currentClass = classItem;
                     break;
                 }
-                
-                if (currentTime < start && !nextClass) {
-                    nextClass = classItem;
-                    break;
-                }
             }
 
-            // If no next class today, check tomorrow
-            if (!nextClass) {
-                const dayOrder = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-                const currentDayIndex = dayOrder.indexOf(currentDay);
+            // If a class is currently running, find the next class after it ends
+            if (currentClass) {
+                const currentClassEnd = parseTimeRange(currentClass.time).end;
                 
-                for (let i = 1; i < 7; i++) {
-                    const nextDayIndex = (currentDayIndex + i) % 7;
-                    const nextDayName = dayOrder[nextDayIndex];
-                    const nextDaySchedule = scheduleData.find(d => d.day === nextDayName);
+                // Look for the next class today after the current class ends
+                for (const classItem of todaySchedule.classes) {
+                    const { start } = parseTimeRange(classItem.time);
                     
-                    if (nextDaySchedule && nextDaySchedule.classes.length > 0) {
-                        nextClass = { ...nextDaySchedule.classes[0], day: nextDayName };
+                    if (start > currentClassEnd) {
+                        nextClass = classItem;
                         break;
                     }
+                }
+                
+                // If no more classes today, look for next day's first class
+                if (!nextClass) {
+                    nextClass = findNextClassFromUpcomingDays(currentDay);
+                }
+            } else {
+                // No class is currently running, find the next upcoming class today
+                for (const classItem of todaySchedule.classes) {
+                    const { start } = parseTimeRange(classItem.time);
+                    
+                    if (currentTime < start) {
+                        nextClass = classItem;
+                        break;
+                    }
+                }
+                
+                // If no more classes today, look for next day's first class
+                if (!nextClass) {
+                    nextClass = findNextClassFromUpcomingDays(currentDay);
                 }
             }
 
@@ -476,6 +492,23 @@
             }
 
             return { current: currentClass, next: nextClass, message };
+        }
+
+        function findNextClassFromUpcomingDays(currentDay) {
+            const dayOrder = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+            const currentDayIndex = dayOrder.indexOf(currentDay);
+            
+            for (let i = 1; i < 7; i++) {
+                const nextDayIndex = (currentDayIndex + i) % 7;
+                const nextDayName = dayOrder[nextDayIndex];
+                const nextDaySchedule = scheduleData.find(d => d.day === nextDayName);
+                
+                if (nextDaySchedule && nextDaySchedule.classes.length > 0) {
+                    return { ...nextDaySchedule.classes[0], day: nextDayName };
+                }
+            }
+            
+            return null;
         }
 
         function renderSchedule() {
